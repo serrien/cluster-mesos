@@ -1,0 +1,26 @@
+{
+  "id": "helloworld",
+  "instances": 1,
+  "cpus": 0.5,
+  "mem": 64,
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "tutum/hello-world",
+       "network": "BRIDGE",
+       "portMappings": [
+         { "containerPort": 80, "protocol": "tcp" }
+       ]
+    }
+  },
+  "healthChecks": [
+    {
+      "protocol": "HTTP",
+      "portIndex": 0,
+      "path": "/",
+      "gracePeriodSeconds": 5,
+      "intervalSeconds": 20,
+      "maxConsecutiveFailures": 3
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+ curl -X POST -H "Content-Type: application/json" http://<master host>:<master port>/v2/apps -d@<script json>
