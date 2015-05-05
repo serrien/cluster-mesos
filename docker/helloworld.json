@@ -13,6 +13,10 @@
        ]
     }
   },
+  "env": {
+    "SERVICE_NAME": "helloworld",
+    "SERVICE_TAG": "helloworld"
+  },
   "healthChecks": [
     {
       "protocol": "HTTP",

@@ -20,6 +20,9 @@ mesos_slaves = {
   "mesos-slave2"  => { :ip => "192.168.33.102", :mem => 512 }
 }
 
+consul = {
+  "consul"  => { :ip => "192.168.33.201", :mem => 512 }
+}
 
 $commonscript = <<SCRIPT
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
@@ -66,12 +69,29 @@ sudo stop mesos-master
 echo manual | sudo tee /etc/init/mesos-master.override
 SCRIPT
 
+$consulscript = <<SCRIPT
+apt-get install unzip
+cd /usr/local/bin
+sudo rm consul
+sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+sudo unzip *.zip
+sudo rm *.zip
+sudo mkdir -p /etc/consul.d/{bootstrap,server,client}
+sudo rm -rf /var/consul
+sudo mkdir -p /var/consul/data
+cd /var/consul
+sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_web_ui.zip
+sudo unzip *.zip
+sudo rm *.zip
+sudo mv /var/consul/dist /var/consul/ui
+SCRIPT
+
 
 Vagrant.configure(2) do |config|
    
   config.vm.box = "ubuntu/trusty64"
   config.vm.provision "docker"
-  config.vm.provision "shell", inline: $commonscript
+  #config.vm.provision "shell", inline: $commonscript
    
   mesos_masters.each_with_index do |(hostname, info), index|
     config.vm.define hostname do |cfg|
@@ -125,6 +145,34 @@ Vagrant.configure(2) do |config|
       cfg.vm.provision "shell", inline: "echo 'docker,mesos' | sudo tee /etc/mesos-slave/containerizers"
       cfg.vm.provision "shell", inline: "echo '5mins' | sudo tee  /etc/mesos-slave/executor_registration_timeout"
       cfg.vm.provision "shell", inline: "sudo service mesos-slave restart"
+
+#cfg.vm.provision "shell", inline: "consul agent -data-dir /tmp/consul -client #{info[:ip]} -ui-dir /home/your_user/dir -join #{consul[0][:ip]}"
     end # end config
   end #end mesos_slaves
+
+consul.each_with_index do |(hostname, info), index|
+    config.vm.define hostname do |cfg|
+
+      cfg.vm.provider :virtualbox do |vb, override|
+        override.vm.network :private_network, ip: "#{info[:ip]}"
+        override.vm.hostname = hostname
+
+        vb.name = hostname
+        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
+      end # end cfg.vm.provider
+     
+      cfg.vm.provision "shell", inline: $consulscript
+      
+      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\"}' | sudo tee /etc/consul.d/bootstrap/config.json"
+      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/bootstrap | sudo tee -a /etc/init/consul.conf"
+
+      cfg.vm.provision "shell", inline: "sudo start consul"
+
+
+    end # end config
+  end #end consul
 end
