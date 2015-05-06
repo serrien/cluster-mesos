@@ -16,8 +16,8 @@ mesos_masters = {
 }
 
 mesos_slaves = {
-  "mesos-slave1"  => { :ip => "192.168.33.101", :mem => 512 },
-  "mesos-slave2"  => { :ip => "192.168.33.102", :mem => 512 }
+  "mesos-slave1"  => { :ip => "192.168.33.101", :mem => 1024 },
+  "mesos-slave2"  => { :ip => "192.168.33.102", :mem => 1024 }
 }
 
 consul = {
@@ -59,6 +59,7 @@ SCRIPT
 
 
 $slavescript = <<SCRIPT
+sudo docker build -t boune/nginx /vagrant/docker/nginx-hello/
 sudo apt-get -y install mesos
 echo "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos" | sudo tee /etc/mesos/zk
 
@@ -67,6 +68,16 @@ echo manual | sudo tee /etc/init/zookeeper.override
 
 sudo stop mesos-master
 echo manual | sudo tee /etc/init/mesos-master.override
+
+apt-get install unzip
+cd /usr/local/bin
+sudo rm consul
+sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
+sudo unzip *.zip
+sudo rm *.zip
+sudo mkdir -p /etc/consul.d/{bootstrap,server,client}
+sudo rm -rf /var/consul
+sudo mkdir -p /var/consul/data
 SCRIPT
 
 $consulscript = <<SCRIPT
@@ -92,6 +103,31 @@ Vagrant.configure(2) do |config|
   config.vm.box = "ubuntu/trusty64"
   config.vm.provision "docker"
   #config.vm.provision "shell", inline: $commonscript
+   
+  consul.each_with_index do |(hostname, info), index|
+    config.vm.define hostname do |cfg|
+
+      cfg.vm.provider :virtualbox do |vb, override|
+        override.vm.network :private_network, ip: "#{info[:ip]}"
+        override.vm.hostname = hostname
+
+        vb.name = hostname
+        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
+      end # end cfg.vm.provider
+     
+      cfg.vm.provision "shell", inline: $consulscript
+      
+      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"node_name\": \"#{hostname}\", \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\"}' | sudo tee /etc/consul.d/bootstrap/config.json"
+      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/bootstrap | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "sudo start consul"
+
+
+    end # end config
+  end #end consul
    
   mesos_masters.each_with_index do |(hostname, info), index|
     config.vm.define hostname do |cfg|
@@ -140,6 +176,17 @@ Vagrant.configure(2) do |config|
       end # end cfg.vm.provider
      
       cfg.vm.provision "shell", inline: $slavescript
+     
+     cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": false, \"node_name\": \"#{hostname}\", \"server\": false, \"data_dir\": \"/var/consul/data\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\", \"start_join\": [\"192.168.33.201\"]}' | sudo tee /etc/consul.d/client/config.json"
+      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/client | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "sudo start consul"
+     
+     
+     cfg.vm.provision "shell", inline: "sudo docker run --name registrator -d -v /var/run/docker.sock:/tmp/docker.sock -h #{info[:ip]} gliderlabs/registrator consul://#{info[:ip]}:8500"
       cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/mesos-slave/ip"
       cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-slave/ip /etc/mesos-slave/hostname"
       cfg.vm.provision "shell", inline: "echo 'docker,mesos' | sudo tee /etc/mesos-slave/containerizers"
@@ -150,29 +197,5 @@ Vagrant.configure(2) do |config|
     end # end config
   end #end mesos_slaves
 
-consul.each_with_index do |(hostname, info), index|
-    config.vm.define hostname do |cfg|
 
-      cfg.vm.provider :virtualbox do |vb, override|
-        override.vm.network :private_network, ip: "#{info[:ip]}"
-        override.vm.hostname = hostname
-
-        vb.name = hostname
-        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
-      end # end cfg.vm.provider
-     
-      cfg.vm.provision "shell", inline: $consulscript
-      
-      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\"}' | sudo tee /etc/consul.d/bootstrap/config.json"
-      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/bootstrap | sudo tee -a /etc/init/consul.conf"
-
-      cfg.vm.provision "shell", inline: "sudo start consul"
-
-
-    end # end config
-  end #end consul
 end
