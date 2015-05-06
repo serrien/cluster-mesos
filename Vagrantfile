@@ -123,6 +123,7 @@ Vagrant.configure(2) do |config|
       cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/bootstrap | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "sudo stop consul; true"
       cfg.vm.provision "shell", inline: "sudo start consul"
 
 
@@ -183,9 +184,10 @@ Vagrant.configure(2) do |config|
       cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/client | sudo tee -a /etc/init/consul.conf"
+      cfg.vm.provision "shell", inline: "sudo stop consul; true"
       cfg.vm.provision "shell", inline: "sudo start consul"
      
-     
+     cfg.vm.provision "shell", inline: "sudo docker rm -f registrator; true"
      cfg.vm.provision "shell", inline: "sudo docker run --name registrator -d -v /var/run/docker.sock:/tmp/docker.sock -h #{info[:ip]} gliderlabs/registrator consul://#{info[:ip]}:8500"
       cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/mesos-slave/ip"
       cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-slave/ip /etc/mesos-slave/hostname"
