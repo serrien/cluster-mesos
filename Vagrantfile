@@ -151,6 +151,7 @@ Vagrant.configure(2) do |config|
       cfg.vm.provision "shell", inline: "sudo mkdir -p /var/zookeeper"
       cfg.vm.provision "shell", inline: "sudo chmod a+w /var/zookeeper"
       cfg.vm.provision "shell", inline: "sudo cp /etc/zookeeper/conf/myid /var/zookeeper"
+      cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/chronos/conf/hostname"
       cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/mesos-master/ip"
       cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-master/ip /etc/mesos-master/hostname"
       cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-master/hostname /etc/marathon/conf"

@@ -18,6 +18,7 @@
     "SERVICE_NAME": "nginx-hello",
     "SERVICE_TAGS": "www"
   },
+  "constraints": [["hostname", "UNIQUE"]],
   "healthChecks": [
     {
       "protocol": "HTTP",
