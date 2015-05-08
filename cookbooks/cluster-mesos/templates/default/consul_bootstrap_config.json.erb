@@ -1,0 +1,10 @@
+{
+  "datacenter": "local",
+  "bootstrap": true,
+  "node_name": "<%=node['hostname']%>",
+  "server": true,
+  "data_dir": "/var/consul/data",
+  "ui_dir": "/var/consul/ui",
+  "client_addr": "<%=node['vagrant']['ipaddress']%>",
+  "bind_addr": "<%=node['vagrant']['ipaddress']%>"
+}

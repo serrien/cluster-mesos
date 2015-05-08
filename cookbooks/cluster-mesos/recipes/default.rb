@@ -1,0 +1,1 @@
+raise "No default recipe for this cookbook, please use specific recipes"
