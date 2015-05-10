@@ -30,7 +30,7 @@
     <!-- HEADER AND TODO COUNT -->
     <div class="jumbotron text-center">
         <h1>Todo list <span class="label label-info">{{ todos.length }}</span></h1>
-        Host : {{ hostname }}
+        Hostname : {{ hostname }}
     </div>
 
     <!-- FORM TO CREATE TODOS -->
@@ -43,7 +43,7 @@
                     <input type="text" class="form-control input-lg text-center" placeholder="Your todo here !" ng-model="formData.text">
                 </div>
 
-                <!-- createToDo() WILL CREATE NEW TODOS -->
+                <!-- createToDo() WILL CREATE NEW TODOS btn-primary or btn-success -->
                 <button type="submit" class="btn btn-primary btn-lg" ng-click="createTodo()">Add</button>
             </form>
         </div>
