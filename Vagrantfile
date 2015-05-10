@@ -59,7 +59,10 @@ SCRIPT
 
 
 $slavescript = <<SCRIPT
-sudo docker build -t boune/nginx /vagrant/docker/nginx-hello/
+sudo docker build -t boune/nginxhello /vagrant/docker/nginx-hello/
+sudo docker build -t boune/nginxtodo /vagrant/docker/nginx-todo/
+sudo docker build -t boune/todolist /vagrant/docker/todolist/
+
 sudo apt-get -y install mesos
 echo "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos" | sudo tee /etc/mesos/zk
 
@@ -117,7 +120,7 @@ Vagrant.configure(2) do |config|
      
       cfg.vm.provision "shell", inline: $consulscript
       
-      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"node_name\": \"#{hostname}\", \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\"}' | sudo tee /etc/consul.d/bootstrap/config.json"
+      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"node_name\": \"#{hostname}\", \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\",\"ports\": {\"dns\": 53}}' | sudo tee /etc/consul.d/bootstrap/config.json"
       cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
       cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
@@ -195,6 +198,8 @@ Vagrant.configure(2) do |config|
       cfg.vm.provision "shell", inline: "echo 'docker,mesos' | sudo tee /etc/mesos-slave/containerizers"
       cfg.vm.provision "shell", inline: "echo '5mins' | sudo tee  /etc/mesos-slave/executor_registration_timeout"
       cfg.vm.provision "shell", inline: "sudo service mesos-slave restart"
+
+      
 
 #cfg.vm.provision "shell", inline: "consul agent -data-dir /tmp/consul -client #{info[:ip]} -ui-dir /home/your_user/dir -join #{consul[0][:ip]}"
     end # end config
