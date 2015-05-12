@@ -3,9 +3,8 @@
 # Installation
 
 ```bash
-brew cask install chefdk
 brew cask install vagrant
-vagrant plugin install vagrant-cachier vagrant-omnibus vagrant-berkshelf
+vagrant plugin install vagrant-cachier vagrant-omnibus
 ```
 
 # Run
