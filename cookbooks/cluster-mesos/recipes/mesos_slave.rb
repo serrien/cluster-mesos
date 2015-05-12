@@ -1,8 +1,10 @@
-include_recipe 'cluster-mesos::docker_install'
 include_recipe 'cluster-mesos::mesos_install'
-execute 'docker build -t boune/nginx /vagrant/docker/nginx-hello/'
+include_recipe 'cluster-mesos::docker_install'
+execute 'docker build -t boune/nginxhello /vagrant/docker/nginx-hello/'
+execute 'docker build -t boune/nginxtodo /vagrant/docker/nginx-todo/'
+execute 'docker build -t boune/todolist /vagrant/docker/todolist/'
 file '/etc/mesos/zk' do
-  content "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos"
+  content "zk://192.168.33.10:2181,192.168.33.11:2181,192.168.33.12:2181/mesos"
   mode "555"
   owner "root"
   group "root"
