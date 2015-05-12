@@ -6,204 +6,62 @@
 # backwards compatibility). Please don't change it unless you know what
 # you're doing.
 
+machines = {
+            "consul" => {:ip => "192.168.33.201", :mem => 512, :roles => ["consul_bootstrap"]},
+            "mesos-master1" => {:ip => "192.168.33.10", :mem => 512, :roles => ["mesos_master"]},
+            "mesos-master2" => {:ip => "192.168.33.11", :mem => 512, :roles => ["mesos_master"]},
+            "mesos-master3" => {:ip => "192.168.33.12", :mem => 512, :roles => ["mesos_master"]},
+            "mesos-slave1" => {:ip => "192.168.33.101", :mem => 1024, :roles => ["consul_client","mesos_slave"]},
+            "mesos-slave2" => {:ip => "192.168.33.102", :mem => 1024, :roles => ["consul_client","mesos_slave"]}
+            }
 
-
-
-mesos_masters = {
-  "mesos-master1" => { :ip => "192.168.33.10", :mem => 512 },
-  "mesos-master2" => { :ip => "192.168.33.11", :mem => 512 },
-  "mesos-master3" => { :ip => "192.168.33.12", :mem => 512 }
-}
-
-mesos_slaves = {
-  "mesos-slave1"  => { :ip => "192.168.33.101", :mem => 1024 },
-  "mesos-slave2"  => { :ip => "192.168.33.102", :mem => 1024 }
-}
-
-consul = {
-  "consul"  => { :ip => "192.168.33.201", :mem => 512 }
-}
-
-$commonscript = <<SCRIPT
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
-DISTRO=$(lsb_release -is | tr '[:upper:]' '[:lower:]')
-CODENAME=$(lsb_release -cs)
-
-echo "deb http://repos.mesosphere.io/${DISTRO} ${CODENAME} main" | \
-  sudo tee /etc/apt/sources.list.d/mesosphere.list
-sudo apt-get -y update
- 
-SCRIPT
-
-
-$masterscript = <<SCRIPT
-sudo apt-get -y install mesos marathon chronos
-echo "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos" | sudo tee /etc/mesos/zk
-echo "dataDir=/var/zookeeper" | sudo tee /etc/zookeeper/conf/zoo.cfg
-echo "clientPort=2181" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "initLimit=5" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "syncLimit=2" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "tickTime=2000" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "server.1=192.168.33.10:2888:3888" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "server.2=192.168.33.11:2888:3888" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-echo "server.3=192.168.33.12:2888:3888" | sudo tee -a /etc/zookeeper/conf/zoo.cfg
-
-echo "2" | sudo tee /etc/mesos-master/quorum
-
-sudo mkdir -p /etc/marathon/conf
-echo "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/marathon " | sudo tee /etc/marathon/conf/zk
-
-sudo stop mesos-slave
-echo manual | sudo tee /etc/init/mesos-slave.override
-SCRIPT
-
-
-$slavescript = <<SCRIPT
-sudo docker build -t boune/nginxhello /vagrant/docker/nginx-hello/
-sudo docker build -t boune/nginxtodo /vagrant/docker/nginx-todo/
-sudo docker build -t boune/todolist /vagrant/docker/todolist/
-
-sudo apt-get -y install mesos
-echo "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos" | sudo tee /etc/mesos/zk
-
-sudo stop zookeeper
-echo manual | sudo tee /etc/init/zookeeper.override
-
-sudo stop mesos-master
-echo manual | sudo tee /etc/init/mesos-master.override
-
-apt-get install unzip
-cd /usr/local/bin
-sudo rm consul
-sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
-sudo unzip *.zip
-sudo rm *.zip
-sudo mkdir -p /etc/consul.d/{bootstrap,server,client}
-sudo rm -rf /var/consul
-sudo mkdir -p /var/consul/data
-SCRIPT
-
-$consulscript = <<SCRIPT
-apt-get install unzip
-cd /usr/local/bin
-sudo rm consul
-sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_linux_amd64.zip
-sudo unzip *.zip
-sudo rm *.zip
-sudo mkdir -p /etc/consul.d/{bootstrap,server,client}
-sudo rm -rf /var/consul
-sudo mkdir -p /var/consul/data
-cd /var/consul
-sudo wget https://dl.bintray.com/mitchellh/consul/0.5.0_web_ui.zip
-sudo unzip *.zip
-sudo rm *.zip
-sudo mv /var/consul/dist /var/consul/ui
-SCRIPT
-
+def optimization_by_caching(config)
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.scope = :box
+    config.omnibus.cache_packages = true if Vagrant.has_plugin?("vagrant-omnibus")
+    config.cache.enable :apt
+    config.cache.enable :apt_lists
+    config.cache.enable :chef
+    config.cache.enable :chef_gem
+    config.cache.enable :gem
+    # to prevent privilege prompt password edit /etc/sudoers following the guidelines here : http://docs.vagrantup.com/v2/synced-folders/nfs.html
+    config.cache.synced_folder_opts = { type: :nfs, mount_options: ['rw', 'vers=3', 'tcp', 'nolock'] }
+  else
+    puts "WARN : You should consider installing vagrant-cachier or you will download things several times"
+  end
+  if Vagrant.has_plugin?("vagrant-omnibus")
+    config.omnibus.chef_version = "12.3.0" # doesn't seem to cache on :latest
+  else
+    puts "WARN : You should consider installing vagrant-omnibus with vagrant cachier or you might download chef several times"
+  end
+end
 
 Vagrant.configure(2) do |config|
-   
+  raise "ERROR : please install chefdk and vagrant-berkshelf" unless Vagrant.has_plugin?("vagrant-berkshelf")
+  optimization_by_caching(config)
   config.vm.box = "ubuntu/trusty64"
-  config.vm.provision "docker"
-  #config.vm.provision "shell", inline: $commonscript
-   
-  consul.each_with_index do |(hostname, info), index|
+  machines.each_with_index do |(hostname, info), index|
     config.vm.define hostname do |cfg|
-
       cfg.vm.provider :virtualbox do |vb, override|
-        override.vm.network :private_network, ip: "#{info[:ip]}"
+        override.vm.network :private_network, ip: info[:ip]
         override.vm.hostname = hostname
-
         vb.name = hostname
-        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
-      end # end cfg.vm.provider
-     
-      cfg.vm.provision "shell", inline: $consulscript
-      
-      cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": true, \"node_name\": \"#{hostname}\", \"server\": true, \"data_dir\": \"/var/consul/data\", \"ui_dir\": \"/var/consul/ui\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\",\"ports\": {\"dns\": 53}}' | sudo tee /etc/consul.d/bootstrap/config.json"
-      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/bootstrap | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "sudo stop consul; true"
-      cfg.vm.provision "shell", inline: "sudo start consul"
-
-
-    end # end config
-  end #end consul
-   
-  mesos_masters.each_with_index do |(hostname, info), index|
-    config.vm.define hostname do |cfg|
-
-      cfg.vm.provider :virtualbox do |vb, override|
-        override.vm.network :private_network, ip: "#{info[:ip]}"
-        override.vm.hostname = hostname
-
-        vb.name = hostname
-        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
-      end # end cfg.vm.provider
-     
-     config.vm.provision "shell" do |s|
-       s.inline = "echo $1"
-       s.args   = "'hello, world!'"
-     end
-      cfg.vm.provision "shell", inline: $masterscript
-      cfg.vm.provision "shell", inline: "echo #{index+1} | sudo tee /etc/zookeeper/conf/myid"
-      cfg.vm.provision "shell", inline: "sudo rm -rf /var/zookeeper"
-      cfg.vm.provision "shell", inline: "sudo mkdir -p /var/zookeeper"
-      cfg.vm.provision "shell", inline: "sudo chmod a+w /var/zookeeper"
-      cfg.vm.provision "shell", inline: "sudo cp /etc/zookeeper/conf/myid /var/zookeeper"
-      cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/chronos/conf/hostname"
-      cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/mesos-master/ip"
-      cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-master/ip /etc/mesos-master/hostname"
-      cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-master/hostname /etc/marathon/conf"
-      cfg.vm.provision "shell", inline: "sudo cp /etc/mesos/zk /etc/marathon/conf/master"
-      cfg.vm.provision "shell", inline: "echo 300000 | sudo tee /etc/marathon/conf/task_launch_timeout"
-      cfg.vm.provision "shell", inline: "sudo service zookeeper restart"
-      cfg.vm.provision "shell", inline: "sudo service mesos-master restart"
-      cfg.vm.provision "shell", inline: "sudo service marathon restart"
-      cfg.vm.provision "shell", inline: "sudo service chronos restart"
-
-      
-    end # end config
-  end #end mesos_masters
-
-  mesos_slaves.each_with_index do |(hostname, info), index|
-    config.vm.define hostname do |cfg|
-
-      cfg.vm.provider :virtualbox do |vb, override|
-        override.vm.network :private_network, ip: "#{info[:ip]}"
-        override.vm.hostname = hostname
-
-        vb.name = hostname
-        vb.customize ["modifyvm", :id, "--memory", info[:mem] ]
-      end # end cfg.vm.provider
-     
-      cfg.vm.provision "shell", inline: $slavescript
-     
-     cfg.vm.provision "shell", inline: "echo '{\"datacenter\": \"local\", \"bootstrap\": false, \"node_name\": \"#{hostname}\", \"server\": false, \"data_dir\": \"/var/consul/data\", \"client_addr\": \"#{info[:ip]}\", \"bind_addr\": \"#{info[:ip]}\", \"start_join\": [\"192.168.33.201\"]}' | sudo tee /etc/consul.d/client/config.json"
-      cfg.vm.provision "shell", inline: "echo 'description \"Consul server process\"' | sudo tee  /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo 'start on (local-filesystems and net-device-up IFACE=eth0)' | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo stop on runlevel [!12345] | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo respawn | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "echo exec sudo consul agent -config-dir /etc/consul.d/client | sudo tee -a /etc/init/consul.conf"
-      cfg.vm.provision "shell", inline: "sudo stop consul; true"
-      cfg.vm.provision "shell", inline: "sudo start consul"
-     
-     cfg.vm.provision "shell", inline: "sudo docker rm -f registrator; true"
-     cfg.vm.provision "shell", inline: "sudo docker run --name registrator -d -v /var/run/docker.sock:/tmp/docker.sock -h #{info[:ip]} gliderlabs/registrator consul://#{info[:ip]}:8500"
-      cfg.vm.provision "shell", inline: "echo #{info[:ip]} | sudo tee /etc/mesos-slave/ip"
-      cfg.vm.provision "shell", inline: "sudo cp /etc/mesos-slave/ip /etc/mesos-slave/hostname"
-      cfg.vm.provision "shell", inline: "echo 'docker,mesos' | sudo tee /etc/mesos-slave/containerizers"
-      cfg.vm.provision "shell", inline: "echo '5mins' | sudo tee  /etc/mesos-slave/executor_registration_timeout"
-      cfg.vm.provision "shell", inline: "sudo service mesos-slave restart"
-
-      
-
-#cfg.vm.provision "shell", inline: "consul agent -data-dir /tmp/consul -client #{info[:ip]} -ui-dir /home/your_user/dir -join #{consul[0][:ip]}"
-    end # end config
-  end #end mesos_slaves
-
-
+        vb.customize ["modifyvm", :id, "--memory", info[:mem]]
+      end
+      cfg.vm.provision "chef_zero" do |chef|
+        chef.cookbooks_path = "cookbooks"
+        chef.roles_path = "roles"
+        chef.formatter = "doc" # nice chef convergence ouput
+        chef.arguments = "no-listen"
+        info[:roles].each do |chef_role|
+          chef.add_role chef_role
+          chef.json = {
+              zookeeper: { id: "#{index}" }, # OK, this is crapy
+              vagrant: {ipaddress: info[:ip] } # OK, this is crapy too but vagrant use eth0 and first ipaddress for internal use
+          }
+        end
+      end
+    end
+  end
 end
+#cfg.vm.provision "shell", inline: "consul agent -data-dir /tmp/consul -client #{info[:ip]} -ui-dir /home/your_user/dir -join #{consul[0][:ip]}"

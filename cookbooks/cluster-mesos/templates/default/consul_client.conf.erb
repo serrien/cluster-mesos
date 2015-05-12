@@ -1,0 +1,5 @@
+description "Consul client process"
+start on (local-filesystems and net-device-up IFACE=eth0)
+stop on runlevel [!12345]
+respawn
+exec sudo consul agent -config-dir /etc/consul.d/client
