@@ -37,7 +37,6 @@ def optimization_by_caching(config)
 end
 
 Vagrant.configure(2) do |config|
-  raise "ERROR : please install chefdk and vagrant-berkshelf" unless Vagrant.has_plugin?("vagrant-berkshelf")
   optimization_by_caching(config)
   config.vm.box = "ubuntu/trusty64"
   machines.each_with_index do |(hostname, info), index|

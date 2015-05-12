@@ -12,7 +12,7 @@ package 'chronos'
 end
 %w(/etc/mesos/zk /etc/marathon/conf/master).each do |f|
   file f do
-    content "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/mesos"
+    content "zk://192.168.33.10:2181,192.168.33.11:2181,192.168.33.12:2181/mesos"
     mode "555"
     owner "root"
     group "root"
@@ -32,7 +32,7 @@ file "/etc/mesos-master/quorum" do
 end
 
 file "/etc/marathon/conf/zk" do
-  content "zk://192.168.33.10:2181,192.168.33.12:2181,192.168.33.13:2181/marathon"
+  content "zk://192.168.33.10:2181,192.168.33.11:2181,192.168.33.12:2181/marathon"
   mode "555"
   owner "root"
   group "root"
