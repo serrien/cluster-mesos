@@ -1,5 +1,5 @@
 Marathon :
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxhello.json
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxtodo.json
 curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxhello.json
 curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/helloworld.json
 curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/todolist.json

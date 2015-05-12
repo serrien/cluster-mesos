@@ -6,5 +6,8 @@
   "data_dir": "/var/consul/data",
   "ui_dir": "/var/consul/ui",
   "client_addr": "<%=node['vagrant']['ipaddress']%>",
-  "bind_addr": "<%=node['vagrant']['ipaddress']%>"
+  "bind_addr": "<%=node['vagrant']['ipaddress']%>",
+  "ports": {
+     "dns": 53
+   }
 }
