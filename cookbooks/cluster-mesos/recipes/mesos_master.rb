@@ -43,9 +43,6 @@ file "/etc/init/mesos-slave.override" do
   owner "root"
   group "root"
 end
-service "mesos-slave" do
-  action :stop
-end
 %w(/etc/zookeeper/conf/myid /var/zookeeper/myid).each do |f|
   file f do
     content node['zookeeper']['id']
