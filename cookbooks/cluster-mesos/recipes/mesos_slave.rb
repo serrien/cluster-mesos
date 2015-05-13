@@ -47,5 +47,5 @@ file '/etc/mesos-slave/executor_registration_timeout' do
   group "root"
 end
 service 'mesos-slave' do
-  action :start
+  action :restart
 end
