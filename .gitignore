@@ -1,3 +1,4 @@
 .vagrant/
 *.lock
 chef/*.deb
+.chef_dependencies
