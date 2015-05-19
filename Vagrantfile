@@ -7,7 +7,7 @@
 # you're doing.
 
 machines = {
-            "consul" => {:ip => "192.168.33.201", :mem => 512, :roles => ["consul_bootstrap"]},
+            "consul" => {:ip => "192.168.33.201", :mem => 512, :roles => ["consul_bootstrap", "docker_registry"]},
             "mesos-master1" => {:ip => "192.168.33.10", :mem => 512, :roles => ["mesos_master"]},
             "mesos-master2" => {:ip => "192.168.33.11", :mem => 512, :roles => ["mesos_master"]},
             "mesos-master3" => {:ip => "192.168.33.12", :mem => 512, :roles => ["mesos_master"]},
@@ -36,7 +36,26 @@ def optimization_by_caching(config)
   end
 end
 
+def download_cookbook(cookbook)
+  Dir.mkdir ".chef_dependencies" unless Dir.exist? ".chef_dependencies"
+  require 'open-uri'
+  unless Dir.exist? ".chef_dependencies/#{cookbook}"
+    puts "INFO : downloading #{cookbook} cookbook in .chef_dependencies/"
+    File.open(".chef_dependencies/#{cookbook}.tgz", "wb") do |saved_file|
+      open("https://supermarket.chef.io/cookbooks/#{cookbook}/download", "rb") do |read_file|
+        saved_file.write(read_file.read)
+      end
+    end
+    system "tar zxvf .chef_dependencies/#{cookbook}.tgz -C .chef_dependencies"
+    FileUtils.rm ".chef_dependencies/#{cookbook}.tgz"
+  end
+end
+
 Vagrant.configure(2) do |config|
+  unless Vagrant.has_plugin?("vagrant-berkshelf")
+    puts "WARN : You should consider installing chefdk and vagrant-berkshelf, I'm downloading chef dependencies a bit hackily (means it's dirty)"
+    %w(apt).each { |cookbook| download_cookbook cookbook }
+  end
   optimization_by_caching(config)
   config.vm.box = "ubuntu/trusty64"
   machines.each_with_index do |(hostname, info), index|
@@ -48,7 +67,7 @@ Vagrant.configure(2) do |config|
         vb.customize ["modifyvm", :id, "--memory", info[:mem]]
       end
       cfg.vm.provision "chef_zero" do |chef|
-        chef.cookbooks_path = "cookbooks"
+        chef.cookbooks_path = ["cookbooks",".chef_dependencies"]
         chef.roles_path = "roles"
         chef.formatter = "doc" # nice chef convergence ouput
         chef.arguments = "no-listen"
