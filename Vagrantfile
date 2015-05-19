@@ -7,7 +7,7 @@
 # you're doing.
 
 machines = {
-            "consul" => {:ip => "192.168.33.201", :mem => 512, :roles => ["consul_bootstrap", "docker_registry"]},
+            "consul" => {:ip => "192.168.33.201", :mem => 1024, :roles => ["consul_bootstrap", "docker_registry"]},
             "mesos-master1" => {:ip => "192.168.33.10", :mem => 512, :roles => ["mesos_master"]},
             "mesos-master2" => {:ip => "192.168.33.11", :mem => 512, :roles => ["mesos_master"]},
             "mesos-master3" => {:ip => "192.168.33.12", :mem => 512, :roles => ["mesos_master"]},
@@ -82,4 +82,3 @@ Vagrant.configure(2) do |config|
     end
   end
 end
-#cfg.vm.provision "shell", inline: "consul agent -data-dir /tmp/consul -client #{info[:ip]} -ui-dir /home/your_user/dir -join #{consul[0][:ip]}"
