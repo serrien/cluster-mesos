@@ -9,3 +9,16 @@ apt_repository 'docker' do
   deb_src false
 end
 package 'lxc-docker'
+
+service "docker" do
+  supports :restart => true
+end
+
+template "/etc/default/docker" do
+  source "docker.erb"
+  mode "555"
+  owner "root"
+  group "root"
+
+  notifies :restart, 'service[docker]', :immediately
+end

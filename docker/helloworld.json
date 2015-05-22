@@ -6,7 +6,7 @@
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "tutum/hello-world",
+      "image": "192.168.33.201:5000/hello-world",
        "network": "BRIDGE",
        "privileged": true,
        "portMappings": [

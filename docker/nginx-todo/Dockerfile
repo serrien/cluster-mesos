@@ -1,5 +1,5 @@
 FROM nginx:1.7
-MAINTAINER Shane Sveller <shane@bellycard.com>
+MAINTAINER Sebastien Errien <sebastien.errien@gmail.com>
 
 RUN DEBIAN_FRONTEND=noninteractive \
     apt-get update -qq && \

@@ -1,11 +1,12 @@
 Marathon :
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxtodo.json
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxhello.json
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/helloworld.json
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/todolist.json
-curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/mongodb.json
-
 python -m SimpleHTTPServer $PORT
+
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/helloworld.json
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxhello.json
+
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/mongodb.json
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/todolist.json
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxtodo.json
 
 Chronos : 
 curl -X POST http://192.168.33.10:8080/v2/apps/app/todolist/restart
@@ -15,3 +16,11 @@ sudo docker build -t boune/nginxhello /vagrant/docker/nginx-hello/
 sudo docker build -t boune/nginxtodo /vagrant/docker/nginx-todo/
 sudo docker build -t boune/todolist /vagrant/docker/todolist/
 
+
+------------
+TODO :
+
+Delpoy failed if marathon master and mesos master on differents nodes
+Try Consul Mesos bridge
+Define group for todolist app
+Todolist app versionning 

@@ -51,22 +51,48 @@ def download_cookbook(cookbook)
   end
 end
 
-Vagrant.configure(2) do |config|
+Vagrant.configure(2) do |config|   
+   
   unless Vagrant.has_plugin?("vagrant-berkshelf")
     puts "WARN : You should consider installing chefdk and vagrant-berkshelf, I'm downloading chef dependencies a bit hackily (means it's dirty)"
     %w(apt).each { |cookbook| download_cookbook cookbook }
   end
+   
+  # Require the Trigger plugin for Vagrant
+  unless Vagrant.has_plugin?('vagrant-triggers')
+    # Attempt to install ourself. 
+    # Bail out on failure so we don't get stuck in an infinite loop.
+    system('vagrant plugin install vagrant-triggers') || exit!
+    # Relaunch Vagrant so the new plugin(s) are detected.
+    # Exit with the same status code.
+    exit system('vagrant', *ARGV)
+  end
+      
   optimization_by_caching(config)
   config.vm.box = "ubuntu/trusty64"
   machines.each_with_index do |(hostname, info), index|
+     
     config.vm.define hostname do |cfg|
+        # Workaround for https://github.com/mitchellh/vagrant/issues/5199
+      cfg.trigger.before [:reload, :up], stdout: true do
+         SYNCED_FOLDER = ".vagrant/machines/#{hostname}/virtualbox/synced_folders"
+        begin
+           puts "INFO : Trying to delete folder #{SYNCED_FOLDER}."
+           File.delete(SYNCED_FOLDER)
+        rescue StandardError => e
+           puts "WARN : Could not delete folder #{SYNCED_FOLDER}."
+        end
+      end  
+            
       cfg.vm.provider :virtualbox do |vb, override|
         override.vm.network :private_network, ip: info[:ip]
         override.vm.hostname = hostname
         vb.name = hostname
         vb.customize ["modifyvm", :id, "--memory", info[:mem]]
       end
+       
       cfg.vm.provision "chef_zero" do |chef|
+        chef.provisioning_path = "/tmp/vagrant-chef"
         chef.cookbooks_path = ["cookbooks",".chef_dependencies"]
         chef.roles_path = "roles"
         chef.formatter = "doc" # nice chef convergence ouput
