@@ -16,11 +16,6 @@ file '/etc/mesos/zk' do
   owner "root"
   group "root"
 end
-%w(zookeeper mesos-master).each do |s|
-  service s do
-    action :stop
-  end
-end
 %w(/etc/init/zookeeper.override /etc/init/mesos-master.override).each do |f|
   file f do
     content "manual"

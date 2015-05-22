@@ -5,7 +5,6 @@ docker_container 'docker-registry' do
   image 'registry'
   detach true
   port '5000:5000'
-  opt ''
   cmd_timeout cmd_timeout_for_download
 end
 
@@ -17,8 +16,9 @@ images.each do |image|
     action image[:action]
     cmd_timeout cmd_timeout_for_download
   end
-  image[:tag] = "latest" if image[:tag].nil?
-  execute "docker tag -f #{image[:name]}:#{image[:tag]} #{node['vagrant']['ipaddress']}:5000/#{image[:name]}:#{image[:tag]}"
-  execute "docker push #{node['vagrant']['ipaddress']}:5000/#{image[:name]}:#{image[:tag]}"
+  tag = "latest"
+  tag = image[:tag] unless image[:tag].nil?
+  execute "docker tag -f #{image[:name]}:#{tag} #{node['vagrant']['ipaddress']}:5000/#{image[:name]}:#{tag}"
+  execute "docker push #{node['vagrant']['ipaddress']}:5000/#{image[:name]}:#{tag}"
 end
 

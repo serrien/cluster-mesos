@@ -3,9 +3,9 @@
 
 machines = {
             "consul" => {:ip => "192.168.33.201", :mem => 1024, :roles => ["consul_bootstrap", "docker_registry"]},
-            "mesos-master1" => {:ip => "192.168.33.10", :mem => 512, :roles => ["mesos_master"]},
-            "mesos-master2" => {:ip => "192.168.33.11", :mem => 512, :roles => ["mesos_master"]},
-            "mesos-master3" => {:ip => "192.168.33.12", :mem => 512, :roles => ["mesos_master"]},
+            "mesos-master1" => {:ip => "192.168.33.10", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
+            "mesos-master2" => {:ip => "192.168.33.11", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
+            "mesos-master3" => {:ip => "192.168.33.12", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
             "mesos-slave1" => {:ip => "192.168.33.101", :mem => 1024, :roles => ["consul_client","mesos_slave"]},
             "mesos-slave2" => {:ip => "192.168.33.102", :mem => 1024, :roles => ["consul_client","mesos_slave"]}
             }
