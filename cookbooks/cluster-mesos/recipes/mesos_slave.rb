@@ -1,5 +1,14 @@
 include_recipe 'cluster-mesos::docker_install'
 include_recipe 'cluster-mesos::mesos_install'
+images = node['mesos']['docker']['images']
+images.each do |image|
+  docker_image image[:name] do
+    registry '192.168.33.201:5000'
+    tag image[:tag] unless image[:tag].nil?
+    action :pull_if_missing
+  end
+end
+
 
 file '/etc/mesos/zk' do
   content "zk://192.168.33.10:2181,192.168.33.11:2181,192.168.33.12:2181/mesos"
