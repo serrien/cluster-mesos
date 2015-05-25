@@ -25,8 +25,7 @@ In order to build sample apps
 
 ```bash
 vagrant ssh consul
-cd /vagrant
-sh buildAndInstallAllContainer.sh
+sh /vagrant/buildAndInstallAllContainer.sh
 ```
 
 Sample apps are now in private registry on consul node.
