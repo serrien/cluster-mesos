@@ -8,6 +8,13 @@ curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/ap
 curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/todolist.json
 curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps -d@docker/nginxtodo.json
 
+
+curl -X POST -H "Content-Type: application/json" http://192.168.33.10:8080/v2/groups -d@docker/todolist-stack.json
+
+curl -X PUT -H "Content-Type: application/json" http://192.168.33.10:8080/v2/apps/todolist/app/todolist -d@docker/update-todolist.json
+
+curl -X DELETE http://192.168.33.10:8080/v2/groups//todolist
+
 Chronos : 
 curl -X POST http://192.168.33.10:8080/v2/apps/app/todolist/restart
 
