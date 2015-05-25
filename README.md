@@ -8,7 +8,7 @@ brew cask install vagrant
 vagrant plugin install vagrant-cachier vagrant-omnibus vagrant-triggers vagrant-berkshelf
 ```
 
-vagrant-berkshelf is optional.
+vagrant-berkshelf and chefdk are optional.
 
 # Run
 
