@@ -70,6 +70,7 @@ Vagrant.configure(2) do |config|
       
   optimization_by_caching(config)
   config.vm.box = "ubuntu/trusty64"
+  config.vm.box_check_update = false
   machines.each_with_index do |(hostname, info), index|
      
     config.vm.define hostname do |cfg|
