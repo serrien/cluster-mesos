@@ -25,7 +25,7 @@ end
   end
 end
 execute "docker rm -f registrator; true"
-execute "docker run --name registrator -d -v /var/run/docker.sock:/tmp/docker.sock -h #{node['vagrant']['ipaddress']} gliderlabs/registrator consul://#{node['vagrant']['ipaddress']}:8500"
+execute "docker run --name registrator -d -v /var/run/docker.sock:/tmp/docker.sock -h #{node['vagrant']['ipaddress']} 192.168.33.201:5000/gliderlabs/registrator consul://#{node['vagrant']['ipaddress']}:8500"
 %w(/etc/mesos-slave/ip /etc/mesos-slave/hostname).each do |f|
   file f do
     content node['vagrant']['ipaddress']
