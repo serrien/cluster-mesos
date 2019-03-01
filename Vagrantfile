@@ -1,16 +1,11 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
-
 machines = {
             "consul" => {:ip => "192.168.33.201", :mem => 1024, :roles => ["consul_bootstrap", "docker_registry"]},
-            "mesos-master1" => {:ip => "192.168.33.10", :mem => 512, :roles => ["mesos_master"]},
-            "mesos-master2" => {:ip => "192.168.33.11", :mem => 512, :roles => ["mesos_master"]},
-            "mesos-master3" => {:ip => "192.168.33.12", :mem => 512, :roles => ["mesos_master"]},
+            "mesos-master1" => {:ip => "192.168.33.10", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
+            "mesos-master2" => {:ip => "192.168.33.11", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
+            "mesos-master3" => {:ip => "192.168.33.12", :mem => 1024, :roles => ["mesos_master","consul_client","mesos_slave"]},
             "mesos-slave1" => {:ip => "192.168.33.101", :mem => 1024, :roles => ["consul_client","mesos_slave"]},
             "mesos-slave2" => {:ip => "192.168.33.102", :mem => 1024, :roles => ["consul_client","mesos_slave"]}
             }
@@ -55,7 +50,7 @@ Vagrant.configure(2) do |config|
    
   unless Vagrant.has_plugin?("vagrant-berkshelf")
     puts "WARN : You should consider installing chefdk and vagrant-berkshelf, I'm downloading chef dependencies a bit hackily (means it's dirty)"
-    %w(apt).each { |cookbook| download_cookbook cookbook }
+    %w(apt docker).each { |cookbook| download_cookbook cookbook }
   end
    
   # Require the Trigger plugin for Vagrant
