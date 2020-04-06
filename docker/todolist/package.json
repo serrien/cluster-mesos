@@ -12,7 +12,7 @@
     "ejs": "~2.3.1",
     "express": "~4.12.2",
     "method-override": "^2.3.2",
-    "mongoose": "^4.0.2",
+    "mongoose": "^5.9.7",
     "morgan": "~1.5.1",
     "serve-favicon": "~2.2.0"
   }
